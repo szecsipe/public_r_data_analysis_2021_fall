@@ -146,19 +146,27 @@ unique(fancy$name)
 Count all cocktails with only one ingredient, and
 
 ```{r}
-
+#Assuming that every ingredient is listed once within one recipe
+all_ingredients <- as.data.frame(table(dat$ingredients))
+names(all_ingredients) <- c("Name", "times_used")
+unique_ingredients <- filter(all_ingredients, times_used == 1)
+nrow(unique_ingredients)
 ```
 
 ## 8. Which cocktail has an ingredient that is only used in one cocktail?
 
 ```{r}
-
+unique_cocktail <- dat[dat$ingredients %in% unique_ingredients$Name, ]
+unique(unique_cocktail$name)
 ```
 
 ## 9. What are the cocktails without rare ingredients?
 
 ```{r}
-  
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+common_cocktail <- dat[dat$name %!in% unique_cocktail$name, ]
+unique(common_cocktail$name)
 ```
 
 ## 10. Create a cheat sheet for the bartender!
