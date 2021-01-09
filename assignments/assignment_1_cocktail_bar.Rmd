@@ -40,7 +40,43 @@ dat <- read_tsv("https://raw.githubusercontent.com/nthun/cocktail-balance/master
 The ingredients are currently in a single cell for each cocktail. It would be better to put them in separate rows. Also, the variable should be cleaned of all quantities (e.g. 1/2 oz, 2 dashes, etc.), and the indicator of alcohol content (e.g. 47.3% abv). You will need to use this cleaned table in later tasks.
 
 ```{r}
+#seperating to rows using different versions of linebreak string
+dat <- dat %>% 
+  separate_rows(ingredients, sep = "<br/>") %>% 
+  separate_rows(ingredients, sep = "<br>") %>% 
+  separate_rows(ingredients, sep = "<b4/>")
 
+#To exlude the words describing the amounts I split the string into words
+temp <- as.data.frame(str_split_fixed(dat$ingredients, ' ', n = Inf))
+table(temp$V2)
+table(temp$V1)
+#I exclude the first two words; they always contain amounts
+temp <- temp[,3:8]
+table(temp$V3)
+#I Create ID to be able to arrange back the lines later to their original order
+temp[,7] <- 1:nrow(temp)
+#I create data-frames containing problematic and non-problematic rows
+oz <- filter(temp, V3 == "oz")
+non_oz <- filter(temp, V3 != "oz")
+#I delete the problematic words
+oz <- oz[,2:7]
+#Merge and rearrance the words into one dataframe
+oz[,7] <- NA
+oz <- oz[, c(1,2,3,4,5,7,6)]
+names(oz) <- names(non_oz)
+temp <- bind_rows(oz, non_oz)
+temp <- arrange(temp, V7.1)
+#Paste the words into strings
+test <- with(temp, paste(V3, V4, V5, V6, V7, V8, sep = " "))
+test <- gsub("NA", "", test)
+#Substitute the original strings
+dat$ingredients <- test
+
+#delete alchohol content indicator
+dat$ingredients <- gsub("\\s*\\([^\\)]+\\)","",as.character(dat$ingredients))
+
+#delete extra white spaces
+dat$ingredients <- trimws(dat$ingredients)
 ```
 
 ## 3. All ingredients in alphabetical order
