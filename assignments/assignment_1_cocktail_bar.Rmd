@@ -46,34 +46,47 @@ dat <- dat %>%
   separate_rows(ingredients, sep = "<br>") %>% 
   separate_rows(ingredients, sep = "<b4/>")
 
+
+
 #To exlude the words describing the amounts I split the string into words
 temp <- as.data.frame(str_split_fixed(dat$ingredients, ' ', n = Inf))
 table(temp$V2)
 table(temp$V1)
+
 #I exclude the first two words; they always contain amounts
 temp <- temp[,3:8]
 table(temp$V3)
+
 #I Create ID to be able to arrange back the lines later to their original order
 temp[,7] <- 1:nrow(temp)
+
 #I create data-frames containing problematic and non-problematic rows
 oz <- filter(temp, V3 == "oz")
 non_oz <- filter(temp, V3 != "oz")
+
 #I delete the problematic words
 oz <- oz[,2:7]
+
 #Merge and rearrance the words into one dataframe
 oz[,7] <- NA
 oz <- oz[, c(1,2,3,4,5,7,6)]
 names(oz) <- names(non_oz)
 temp <- bind_rows(oz, non_oz)
 temp <- arrange(temp, V7.1)
+
 #Paste the words into strings
 test <- with(temp, paste(V3, V4, V5, V6, V7, V8, sep = " "))
 test <- gsub("NA", "", test)
+
 #Substitute the original strings
 dat$ingredients <- test
 
+
+
 #delete alchohol content indicator
 dat$ingredients <- gsub("\\s*\\([^\\)]+\\)","",as.character(dat$ingredients))
+
+
 
 #delete extra white spaces
 dat$ingredients <- trimws(dat$ingredients)
@@ -84,7 +97,8 @@ dat$ingredients <- trimws(dat$ingredients)
 Before opening the bar, you need to find a reliable supplier that has all the ingredients. You need to send a list of all possible ingredients you will need. They don't need the quantities (i.e. how many of these are needed), just the names of the ingredients.
 
 ```{r}
-
+ingredients <- names(table(dat$ingredients))
+ingredients
 ```
 
 ## 4. Number of unique ingredients
@@ -92,7 +106,8 @@ Before opening the bar, you need to find a reliable supplier that has all the in
 How many different ingredients you will need?
 
 ```{r}
-
+num_of_ingredients <- length(ingredients)
+num_of_ingredients
 ```
 
 ## 5. What are the top 10 ingredients?
@@ -100,7 +115,13 @@ How many different ingredients you will need?
 What are the 10 most frequently used ingredients? If there are ties, you can list more than 10.
 
 ```{r}
-
+ingredient_numbers <- as.data.frame(table(dat$ingredients))
+names(ingredient_numbers) <- c("Name", "times_used")
+ingredient_numbers <- arrange(ingredient_numbers, times_used)
+tenth <- ingredient_numbers[(nrow(ingredient_numbers)-9), 2]
+frequent <- filter(ingredient_numbers, times_used >= 6)
+frequent <- frequent[,1]
+frequent
 ```
 
 ## 6. Which cocktail(s) has/have the most ingredients?
@@ -108,7 +129,16 @@ What are the 10 most frequently used ingredients? If there are ties, you can lis
 Count the number of ingredients and filter all the cocktails that has that many.
 
 ```{r}
+dat <- dat %>%
+  group_by(name) %>%
+  mutate(number_of_ingredients = n()) %>% 
+  ungroup()
 
+max(dat$number_of_ingredients)
+
+fancy <- filter(dat, number_of_ingredients == 6)
+
+unique(fancy$name)
 ```
 
 ## 7. How many ingredients appear in only one cocktail (rare ingredient)?
