@@ -43,10 +43,22 @@ temp <- temp %>%
   arrange(n_exp) %>%
   filter(n_exp >= temp[(nrow(temp)-14), 2])
 
-exp <- filter(exp, peak_name %in% temp$peak_name)
+exp <- exp %>%
+  filter(peak_name %in% temp$peak_name) %>%
+  arrange(desc(n_exp))
 
 #plotting#
 
+ggplot(data = exp, aes(reorder(peak_name, n_exp))) +
+  geom_bar(aes(fill = season)) +
+  scale_fill_manual("legend", values = c("Autumn" = "#6600ff", "Spring" = "#3366ff",
+                                         "Summer" = "#009999", "Unknown" = "#33cc33",
+                                         "Winter" = "#fcec03")) +
+  coord_flip() +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(title="The 15 most popular peaks stacked by season expedition",
+        x ="", y = "Number of expeditions")
 ```
 
 ## Task 2: PhDs awarded
