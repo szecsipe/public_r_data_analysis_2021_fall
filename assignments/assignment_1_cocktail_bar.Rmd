@@ -119,7 +119,7 @@ ingredient_numbers <- as.data.frame(table(dat$ingredients))
 names(ingredient_numbers) <- c("Name", "times_used")
 ingredient_numbers <- arrange(ingredient_numbers, times_used)
 tenth <- ingredient_numbers[(nrow(ingredient_numbers)-9), 2]
-frequent <- filter(ingredient_numbers, times_used >= 6)
+frequent <- filter(ingredient_numbers, times_used >= tenth)
 frequent <- frequent[,1]
 frequent
 ```
