@@ -174,12 +174,25 @@ unique(common_cocktail$name)
 Create a matrix that shows all cocktail names as rows and all ingredients as columns. When a cocktail requires an ingredient, there should be an "X" in the cell, otherwise, the cell should remain empty. Example:
 
 ```{r}
-
+cocktails <- unique(dat$name)
+req_ingredients <- unique(dat$ingredients)
+cheatsheet <- matrix(1:(length(cocktails)*length(ingredients)), nrow = 55, dimnames = list(cocktails, ingredients))
 ```
 
 ```{r}
-
+for (i in 1:length(cocktails)){
+  for (j in 1:length(ingredients)){
+    if (as.data.frame(dim(filter(dat, name == cocktails[[i]] & ingredients == req_ingredients[[j]])))[1,1] == 0){
+      cheatsheet[i,j] <- ""}
+    else {
+      cheatsheet[i,j] <- "X"
+      }
+    }
+}
+cheatsheet
 ```
+
+
 
 Congrats, the bar is now officially open!
 
