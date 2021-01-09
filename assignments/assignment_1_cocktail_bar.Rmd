@@ -13,6 +13,7 @@ editor_options:
 -   Using Git and Github (for submitting the task)
 -   Data manipulation (e.g. dplyr, tidyr)
 -   String manipulation (e.g. stringr)
+-   Nothing else
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
