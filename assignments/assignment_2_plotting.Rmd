@@ -134,7 +134,16 @@ ggplot(data = dat, mapping = aes(x = w_log_sum_n, y = b_log_sum_n)) +
   geom_text(aes(label = state_abb)) +
   theme_light() +
   scale_y_continuous(labels = comma_format()) +
-  scale_x_continuous(labels = comma_format())
+  scale_x_continuous(labels = comma_format()) +
+  labs(title="Title number of peoplewalking vs. biking to work in each USA state",
+      x ="Number of ppl walking to work (log N)", y = "Number of ppl biking to work (log N)",
+      colour = "State Region")
+
+
+
+
+
+
 
 
 
