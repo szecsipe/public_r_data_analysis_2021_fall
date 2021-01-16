@@ -312,6 +312,7 @@ Create the more complex model based on the results of the model diagnostics. Als
 
 ```{r}
 #it remains the same
+#Y = 2.15888 + -0.03375 * age + 0.29074 * sex(male) + -0.01577 * STAI_trait + 0.07944 * pain_cat + 0.12749 * mindfulness + 0.54098 * cortisol_serum
 mc_updated <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum,
          data = dat_filtered[complete.cases(dat_filtered),])
 summary(mc_updated)
