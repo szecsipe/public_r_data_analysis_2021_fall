@@ -51,7 +51,7 @@ exp <- exp %>%
 
 #plotting#
 
-ggplot(data = exp, aes(reorder(peak_name, n_exp))) +
+plot1 <- ggplot(data = exp, aes(reorder(peak_name, n_exp))) +
   geom_bar(aes(fill = season)) +
   scale_fill_viridis_d() +
   coord_flip() +
@@ -82,7 +82,7 @@ phd <- phd %>%
   ungroup()
 
 
-ggplot(data = phd, aes(year, awards, group = broad_field, colour = broad_field)) +
+plot2 <- ggplot(data = phd, aes(year, awards, group = broad_field, colour = broad_field)) +
   geom_line(size = 1.2) +
   labs(colour = "Broad field", title = "Number of awarded Ph.D.-s in the US by year",
       x = "", y = "") +
@@ -129,7 +129,7 @@ tempB <- tempB[complete.cases(tempB),]
 dat <- left_join(tempW, tempB, by = c("state", "state_region"))
 
 
-ggplot(data = dat, mapping = aes(x = w_log_sum_n, y = b_log_sum_n)) +
+plot3 <- ggplot(data = dat, mapping = aes(x = w_log_sum_n, y = b_log_sum_n)) +
   geom_point(aes(colour = factor(state.region))) +
   geom_text(aes(label = state_abb)) +
   theme_light() +
@@ -138,16 +138,6 @@ ggplot(data = dat, mapping = aes(x = w_log_sum_n, y = b_log_sum_n)) +
   labs(title="Title number of peoplewalking vs. biking to work in each USA state",
       x ="Number of ppl walking to work (log N)", y = "Number of ppl biking to work (log N)",
       colour = "State Region")
-
-
-
-
-
-
-
-
-
-
 
 
 ```
