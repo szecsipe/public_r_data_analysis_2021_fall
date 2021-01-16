@@ -41,8 +41,9 @@ exp <- exp %>%
 temp <- exp[,c("peak_name", "n_exp")]
 temp <- temp %>%
   unique() %>%
-  arrange(n_exp) %>%
-  filter(n_exp >= temp[(nrow(temp)-14), 2])
+  arrange(n_exp)
+
+temp <-  filter(temp, n_exp >= temp[(nrow(temp)-14), 2])
 
 exp <- exp %>%
   filter(peak_name %in% temp$peak_name) %>%
@@ -52,11 +53,9 @@ exp <- exp %>%
 
 ggplot(data = exp, aes(reorder(peak_name, n_exp))) +
   geom_bar(aes(fill = season)) +
-  scale_fill_manual("legend", values = c("Autumn" = "#6600ff", "Spring" = "#3366ff",
-                                         "Summer" = "#009999", "Unknown" = "#33cc33",
-                                         "Winter" = "#fcec03")) +
+  scale_fill_viridis_d() +
   coord_flip() +
-  theme_bw() +
+  theme_bw(base_size = 15.8) +
   theme(legend.position = "bottom") +
   labs(title="The 15 most popular peaks stacked by season expedition",
         x ="", y = "Number of expeditions")
@@ -83,6 +82,8 @@ phd <- phd %>%
 
 ggplot(data = phd, aes(year, awards, group = broad_field, colour = broad_field)) +
   geom_line(size = 1.5) +
+  labs(colour = "Broad field", title = "Number of awarded Ph.D.-s in the US by year",
+      x = "", y = "") +
   scale_fill_manual("legend", values = c("Education" = "#009900", "Engineering" = "#cc3300",
                                          "Humanities and arts" = "#3366cc", "Life sciences" = "#cc0099",
                                          "Mathematics and computer sciences" = "#339966",
@@ -90,8 +91,6 @@ ggplot(data = phd, aes(year, awards, group = broad_field, colour = broad_field))
   theme_bw() +
   theme(panel.border = element_blank())+
   scale_y_continuous(labels = comma) +
-  labs(colour = "Broad field", title = "Number of awarded Ph.D.-s in the US by year",
-      x = "", y = "") +
   scale_x_continuous(labels = c(2008, 2010, 2012, 2014, 2016), breaks = c(2008, 2010, 2012, 2014, 2016))
 
 ```
