@@ -59,7 +59,8 @@ In your discussion of the findings, briefly interpret the results of the above a
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
-
+library(tidyverse)
+dat <- readxl::read_excel("data/assignment_3_dataset.xlsx")
 ```
 
 ## Data and model diagnostics 
@@ -69,7 +70,51 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 Run an exploratory data analysis (EDA) to investigate the dataset.
 
 ```{r}
+unique(levels(dat$ID))
+#ID not factor will nedd to transform
+table(dat$pain)
+#need to exlude the value 50, bacause it can be between 0 and 10
 
+hist(dat$pain, breaks = 100, xlim = c(0, 10))
+
+table(dat$sex)
+#need to transform woman into female and tranform into factor
+
+table(dat$age)
+hist(dat$age)
+# looks fine
+
+table(dat$STAI_trait)
+hist(dat$STAI_trait)
+#values are between 20 and 80 as should be
+
+table(dat$pain_cat)
+hist(dat$pain_cat)
+#all values are between 0 and 52 as should be
+
+table(dat$mindfulness)
+hist(dat$mindfulness)
+#there is one data point above 6, need to exterminate it
+
+table(dat$weight)
+hist(dat$weight)
+#looks realistic
+
+table(dat$cortisol_serum)
+hist(dat$cortisol_serum)
+#looks great
+
+table(dat$cortisol_saliva)
+hist(dat$cortisol_saliva)
+#ooks ok
+
+table(dat$IQ)
+hist(dat$IQ)
+#there are some suspiciously low and high numbers, but I guess they have to go to the dentist too, I decide to keep them
+
+table(dat$household_income)
+hist(dat$household_income)
+#Doesn't look like real-life data but at the same dentist it's probably realistic
 ```
 
 #### Correct coding errors
@@ -77,7 +122,18 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
+#recoding ID as factor
+dat$ID <- as.factor(dat$ID)
 
+#Removing false data, keeping the participants
+dat$pain[dat$pain == 50] <- NA
+dat$mindfulness[dat$mindfulness > 6] <- NA
+
+#Correcting false data
+dat <- dat %>%
+  mutate(sex = as.factor(case_when(sex == "woman" | sex == "female" ~ "female",
+                         sex == "male" ~ "male")))
+  
 ```
 
 ### Model diagnostics
@@ -86,15 +142,34 @@ If you find values in the dataset during the EDA, that are not correct based on 
 In order to test the more complex model for outliers and to test the assumptions first build the model.
 
 ```{r}
-
+mc <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum + cortisol_saliva,
+         data = dat[complete.cases(dat), ])
+summary(mc)
 ```
 
-#### Checking for influential outliers
+#### Checking for influential outliesrs
 
 Check for outlier values in the model.
 
 ```{r}
+library(ggfortify)
+autoplot(mc)
 
+# ## Cook's distance check
+cooksd <- cooks.distance(mc)
+3*mean(cooksd)
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")  # plot cook's distance
+abline(h = 0.022, col="red") #using 3 times the mean as cutoff point
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>0.022, names(cooksd),""), col="red")
+influential <- as.numeric(names(cooksd)[(cooksd > (0.022))])
+
+dat_filtered <- dat[-influential, ]
+
+#check whether it changes anything
+mc_2 <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum + cortisol_saliva,
+         data = dat_filtered)
+autoplot(mc_2)
+#It does not change anything, I choose to use the original dataset
 ```
 
 #### Checking assumptions
@@ -102,19 +177,56 @@ Check for outlier values in the model.
 Check the normality assumption.
 
 ```{r}
-
+plot(mc, 2)
+# the Q-Q plot looks ok
 ```
 
 Check the linearity assumption.
 
 ```{r}
+plot(mc, 1)
+#There is a fitted value which seems much smaller
+as.data.frame(fitted.values(mc))
+#32 is the outlier, I exclude it
+dat_filtered <- dat[-c(32),]
 
+#(homoskedasticity: density of fitted values varies a bit)
+#There might be a slight quadratic relationship, but not drastic, I check the individual relationships
+
+ggplot(dat, aes(pain, age)) +
+  geom_point() +
+  geom_smooth()
+
+ggplot(dat, aes(pain, STAI_trait)) +
+  geom_point() +
+  geom_smooth()
+
+ggplot(dat, aes(pain, pain_cat)) +
+  geom_point() +
+  geom_smooth()
+#looks weird, but not quadratic
+
+ggplot(dat, aes(pain, cortisol_serum)) +
+  geom_point() +
+  geom_smooth()
+
+ggplot(dat, aes(pain, cortisol_saliva)) +
+  geom_point() +
+  geom_smooth()
+
+ggplot(dat, aes(pain, mindfulness)) +
+  geom_point() +
+  geom_smooth()
+
+#Neither shows quadratic relationship, I leave it at that
 ```
 
 Check the homoscedasticty assumption (homogeneity of variance).
 
 ```{r}
-
+plot(mc, 3)
+lmtest::bptest(mc)
+#the plot is showing strange patterns but based on the statistical test I choose not to worry about it
 ```
 
 Check the multicollinearity assumption.
@@ -126,7 +238,8 @@ https://statisticalhorizons.com/multicollinearity
 http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity-in-regression-analysis
 
 ```{r}
-
+car::vif(mc)
+#either or both cortisol measures should be excluded, I exclude cortisol salvia
 ```
 
 ### Making decision based on model diagnostics
@@ -134,13 +247,24 @@ http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity
 If based on the assumption tests you decide to drop a predictor variable you should do that here. Create your updated model.
 
 ```{r}
+#using the filtered data with the excluded outlier
+mc_updated <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum,
+         data = dat_filtered)
+summary(mc_updated)
+
 
 ```
 
 #### Checking outliers of the updated model
 
 ```{r}
+cooksd <- cooks.distance(mc_updated)
+3*mean(cooksd)
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")  # plot cook's distance
+abline(h = 0.022, col="red") #using 3 times the mean as cutoff point
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>0.022, names(cooksd),""), col="red")
 
+#looks similiar as in the previuos model, nothing to do
 ```
 
 #### Checking assumptions of the updated model
@@ -148,25 +272,31 @@ If based on the assumption tests you decide to drop a predictor variable you sho
 Normality assumption
 
 ```{r}
-
+plot(mc_updated, 2)
+# the Q-Q plot looks ok
 ```
 
 Linearity assumption
 
 ```{r}
-
+plot(mc_updated, 1)
+#looks similiar
 ```
 
 Homoscedasticty assumption (homogeneity of variance)
 
 ```{r}
+plot(mc_updated, 3)
+lmtest::bptest(mc)
+#the plot is showing the same strange patterns but based on the statistical test I choose not to worry about it
 
 ```
 
 Multicollinearity assumption
 
 ```{r}
-
+car::vif(mc_updated)
+# It is good now
 ```
 
 ## Model comparison
@@ -174,18 +304,29 @@ Multicollinearity assumption
 Create the simple model and get the results of the model that needs to be reported based on the What to report section.
 
 ```{r}
-
+m_base <- lm(pain ~ sex + age, data = dat_filtered[complete.cases(dat_filtered),])
+summary(m_base)
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
 
 ```{r}
-
+#it remains the same
+mc_updated <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum,
+         data = dat_filtered[complete.cases(dat_filtered),])
+summary(mc_updated)
 ```
 
 Compare the two models.
 
 ```{r}
-
+AIC(mc_updated)
+AIC(m_base)
+BIC(mc_updated)
+BIC(m_base)
+library(zoo)
+library(lmtest)
+library(doBy)
+lrtest(mc_updated, m_base)
 ```
 
