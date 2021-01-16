@@ -72,6 +72,8 @@ Notes:
 -   The line size is 1.2, the colors are from the brewer "Dark2" palette. The theme is set to minimal.
 
 ```{r}
+library(RColorBrewer)
+
 phd <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-19/phd_by_field.csv")
 
 phd <- phd %>%
@@ -81,18 +83,14 @@ phd <- phd %>%
 
 
 ggplot(data = phd, aes(year, awards, group = broad_field, colour = broad_field)) +
-  geom_line(size = 1.5) +
+  geom_line(size = 1.2) +
   labs(colour = "Broad field", title = "Number of awarded Ph.D.-s in the US by year",
       x = "", y = "") +
-  scale_fill_manual("legend", values = c("Education" = "#009900", "Engineering" = "#cc3300",
-                                         "Humanities and arts" = "#3366cc", "Life sciences" = "#cc0099",
-                                         "Mathematics and computer sciences" = "#339966",
-                                         "Other" = "#ff9900", "Psychology and social sciences" = "#996600")) +
-  theme_bw() +
-  theme(panel.border = element_blank())+
-  scale_y_continuous(labels = comma) +
-  scale_x_continuous(labels = c(2008, 2010, 2012, 2014, 2016), breaks = c(2008, 2010, 2012, 2014, 2016))
-
+  theme_minimal(base_size = 15.5) +
+  scale_x_continuous(breaks = pretty_breaks(5)) +
+  scale_colour_brewer(palette = "Dark2") +
+  theme(panel.border = element_blank()) +
+  scale_y_continuous(labels = comma_format())
 ```
 
 ## Task 3: Commute in the US
@@ -106,5 +104,41 @@ Notes:
 -   The point size is 2, . The theme is set to light.
 
 ```{r}
+bkv <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-05/commute.csv")
+
+bkv <- bkv %>%
+  group_by(state, mode) %>%
+  mutate(sum_n = sum(n, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(log_sum_n = log(sum_n))
+
+tempW <- filter(bkv, mode == "Walk")[,c("state", "state_region", "sum_n", "log_sum_n", "state_abb")] %>%
+  rename(w_sum_n = sum_n) %>%
+  rename(w_log_sum_n = log_sum_n) %>%
+  unique()
+
+tempW <- tempW[complete.cases(tempW),]
+
+tempB <- filter(bkv, mode == "Bike")[,c("state", "state_region", "sum_n", "log_sum_n")] %>%
+  rename(b_sum_n = sum_n) %>%
+  rename(b_log_sum_n = log_sum_n) %>%
+  unique()
+
+tempB <- tempB[complete.cases(tempB),]
+
+dat <- left_join(tempW, tempB, by = c("state", "state_region"))
+
+
+ggplot(data = dat, mapping = aes(x = w_log_sum_n, y = b_log_sum_n)) +
+  geom_point(aes(colour = factor(state.region))) +
+  geom_text(aes(label = state_abb)) +
+  theme_light() +
+  scale_y_continuous(labels = comma_format()) +
+  scale_x_continuous(labels = comma_format())
+
+
+
+
+
 
 ```
