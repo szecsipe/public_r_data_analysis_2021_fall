@@ -149,7 +149,7 @@ The distribution has a weird tale approaching 0, but otherwise looks great
 # ##Research question
 In this analysis I intend to explore what performance metrics can efficiently predics the ratings of the Quarterbacks (QBs). This question is not unique probably, because QBs are in the focus of the game and many fans think that the QB is the player who is mainly responsible for the success of the team. Sadly I can not test that hypothesis since I have no data available about the outcome of the games. I choose my research question to help the QBs of tomorrow. If they know what metrics (skills) they have to pay attention to have a higher rating they will have a greater chance to be drafted or be the crowd favorite.
 
-First, I will build a model (m1) that contains only the key QB metrics (pass_yds, pass_tds, int). Second, I will build a model (m2) that contains the metrics that is contained by m1 and I add the metrics hybrid players are known for (rush_yds, rush_tds, rush_fumbles). Finally, I will test the better model in a  multilevel model to check whether franchises are an influential factor.
+First, I will build a model (m1) that contains only the key QB metrics (pass_yds, pass_tds, int). Second, I will build a model (m2) that contains the metrics that is contained by m1 and I add the metrics hybrid players are known for (rush_yds, rush_tds, rush_fumbles).
 
 # ##Ploting
 Before I start to test my hypotheses I produce two plots to know more about the QBs of these years.
@@ -320,7 +320,7 @@ The Q-Q plot looks ok, It follows the line
 ```{r}
 plot(m2_2, 1)
 ```
-There is a little difference between the red line and the middle line but it is not a great difference
+There is a little difference between the red line and the middle line but it is not a great difference.
 
 #Homoscedasticty
 
@@ -330,5 +330,44 @@ lmtest::bptest(m2_2)
 #the plot is showing a weak curve but based on the statistical test I choose not to worry about it
 ```
 
+#Multicollinearity
+
+```{r}
+car::vif(m2_2)
+#either or both cortisol measures should be excluded, I exclude cortisol salvia
+```
+No values are above 3, so I can say that my variables are independent of each other enough.
+
 I am done with the first model, I will fit my less comlex model on the filtered data
+
+```{r}
+m1 <- lm(rate ~ pass_yds + pass_tds + int, data = qb_filtered)
+summary(m1)
+```
+
+#Overall picture
+```{r}
+autoplot(m1)
+```
+These plots are very similiar to the more complex models plots. Based on these plots and the fact that every variable in this model is present in the more complex model, I decide that the assumptions don't need to be investigated further here.
+
+#Model comparison
+```{r}
+AIC(m1)
+AIC(m2_2)
+BIC(m1)
+BIC(m2_2)
+
+lmtest::lrtest(m2_2, m1)
+```
+
+
+
+
+
+
+
+
+
+
 
