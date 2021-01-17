@@ -151,8 +151,32 @@ In this analysis I intend to explore what performance metrics can efficiently pr
 First, I will build a model (m1) that contains only the key QB metrics (pass_yds, pass_tds, int). Second, I will build a model (m2) that contains the metrics that is caintained by m1 and I add the metrics hybrid players are known for (rush_yds, rush_avg, rush_tds, rush_fumbles). Finally, I will test the better model in a  multilevel model to check whether franchises are an influential factor.
 
 ##Ploting
-Before I start to test my hypotheses I produce two plots. 
+Before I start to test my hypotheses I produce two plots to know more about the QBs of these years.
 
+First, I will check who were the most successful QBs in each team (I will only count those players who played at least 16 matches, which is the length of the regular season)
+
+```{r}
+MVP_dat <- qb_trimmed %>%
+  group_by(team, name) %>%
+  summarize(Rating = mean(rate), Matches = n(), SD = sd(rate)) %>%
+  filter(Matches >=16) %>%
+  group_by(team) %>%
+  filter(Rating == max(Rating))
+
+MVP <- ggplot(MVP_dat, aes(x = Rating, y = team)) +
+  geom_text(aes(label = name), nudge_y = -0.5) +
+  geom_point()+
+  theme_light() +
+  theme(panel.border = element_blank(), plot.title = element_text(hjust=0.5)) +
+  xlim(82, 105) +
+  labs(y = "",
+       x = "Average ratings of preformance during his time on the team") +
+  coord_cartesian(ylim = c(0,31)) +
+  ggtitle(expression(atop("The Rating of the Highest Rated Player of each Franchise",
+                    paste("(With a QB in the database who played at least 16 matches)"))))
+MVP
+```
+The plot shows us that there is
 
 
 
