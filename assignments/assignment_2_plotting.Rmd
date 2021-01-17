@@ -131,7 +131,7 @@ dat <- left_join(tempW, tempB, by = c("state", "state_region"))
 
 plot3 <- ggplot(data = dat, mapping = aes(x = w_log_sum_n, y = b_log_sum_n)) +
   geom_point(aes(colour = factor(state.region))) +
-  geom_text(aes(label = state_abb)) +
+  geom_text(aes(label = state_abb), check_overlap = TRUE) +
   theme_light() +
   scale_y_continuous(labels = comma_format()) +
   scale_x_continuous(labels = comma_format()) +
