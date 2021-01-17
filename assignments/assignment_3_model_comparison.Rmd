@@ -306,28 +306,33 @@ Create the simple model and get the results of the model that needs to be report
 ```{r}
 m_base <- lm(pain ~ sex + age, data = dat_filtered[complete.cases(dat_filtered),])
 summary(m_base)
+coef_report_simple <- broom::tidy(m_base)
+coef_report_simple
 ```
+adj.R2 = .06663 F = 6.569, df = 154,  p-value = .00183
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
 
+Y = 2.15888 + -0.03375 * age + 0.29074 * sex(male) + -0.01577 * STAI_trait + 0.07944 * pain_cat + 0.12749 * mindfulness + 0.54098 * cortisol_serum
+
 ```{r}
 #it remains the same
-#Y = 2.15888 + -0.03375 * age + 0.29074 * sex(male) + -0.01577 * STAI_trait + 0.07944 * pain_cat + 0.12749 * mindfulness + 0.54098 * cortisol_serum
 mc_updated <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum,
          data = dat_filtered[complete.cases(dat_filtered),])
 summary(mc_updated)
+coef_report_complex <- broom::tidy(mc_updated)
+coef_report_complex
 ```
+adj.R2 = .2853 F = 11.38, df = 150,  p-value = 1.834e-10
 
 Compare the two models.
 
 ```{r}
 AIC(mc_updated)
 AIC(m_base)
-BIC(mc_updated)
-BIC(m_base)
-library(zoo)
-library(lmtest)
-library(doBy)
-lrtest(mc_updated, m_base)
 ```
 
+```{r}
+broom::tidy(lmtest::lrtest(mc_updated, m_base))[2,4:5]
+```
+F = 46.0 p-value = 0.00000000241
