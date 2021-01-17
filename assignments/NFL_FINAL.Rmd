@@ -176,18 +176,103 @@ MVP <- ggplot(MVP_dat, aes(x = Rating, y = team)) +
                     paste("(With a QB in the database who played at least 16 matches)"))))
 MVP
 ```
-The plot shows us that there is
+The plot shows us that it does not mean the same to be the best in every team. You can even see that Peyton Manning managed to be the highest rated players of two teams (Denver and Indianapolis). Standard deviations of ratings were not added to the plot (a plot it below), they show that it is possible that these players do not differ based on their ratings.
 
 
+```{r}
+MVP_bars <- ggplot(MVP_dat, aes(x = Rating, y = team)) +
+  geom_text(aes(label = name), nudge_y = -0.5) +
+  geom_point()+
+  theme_light() +
+  geom_errorbarh(aes(xmax = Rating + SD, xmin = Rating - SD)) +
+  theme(panel.border = element_blank(), plot.title = element_text(hjust=0.5)) +
+  xlim(50, 150) +
+  labs(y = "",
+       x = "Average ratings of preformance during his time on the team") +
+  coord_cartesian(ylim = c(0,31)) +
+  ggtitle(expression(atop("The Rating of the Highest Rated Player of each Franchise",
+                    paste("(With a QB in the database who played at least 16 matches)"))))
+MVP_bars
+```
+
+The four most successful NFL teams are the Pittsburgh Steelers (PIT), the New England Patriots (NE), the San Francisco 49ers (SF), and the Dallas Cowboys (DAL). Lets look at the performance of those teams' QBs. It would be interesting to look at how efficiently those teams can use a pass attempt. This can be and indicator of how good they are at protecting the QB, catching the ball and creating safe receiving positions.
 
 
+```{r}
+top <- qb_trimmed %>%
+  filter(team == "PIT" |
+         team == "NE" |
+         team == "SF" |
+         team == "DAL")
 
 
+top_pass <- ggplot(top, aes(x = pass_att, y = pass_yds, colour = team)) +
+  geom_jitter()+
+  theme_light() +
+  theme(panel.border = element_blank(), plot.title = element_text(hjust=0.5)) +
+  labs(y = "",
+       x = "Average ratings of preformance during his time on the team") +
+  ggtitle(expression(atop("The Rating of the Highest Rated Player of each Franchise",
+                    paste("(With a QB in the database who played at least 16 matches)"))))
+top_pass
+```
+There is no obvious pattern that would indicate difference between the teams. If there is difference, it is more subtle. Let's look at a boxplot showing the ratio of pass attempts and passed yards across the four top team.
+
+```{r}
+top <- top %>%
+  mutate(success = pass_yds/pass_att)
 
 
+top_success <- ggplot(top, aes(x = team, y = success)) +
+  geom_boxplot()+
+  theme_light() +
+  theme(panel.border = element_blank(), plot.title = element_text(hjust=0.5)) +
+  labs(y = "Ratio of the number of attempted passes and passed yards",
+       x = "") +
+  ggtitle("Ratio of attempted passes and passed yards in the historically top 4 teams") +
+  scale_y_continuous(breaks = seq(0, 15, by = 2))
+top_success
+```
+Indeed, based on the boxplots there is no difference between the teams.
 
 
+To get familiar with the variables I will use I look at some of the relationships between them. First, I check whether the number of attempted passes and the attempted rushes have a inverse relationship.
+```{r}
+pass_rush <- ggplot(qb_trimmed, aes(x = rush_att, y = pass_att)) +
+  geom_jitter() +
+  geom_smooth()+
+  theme_light() +
+  theme(panel.border = element_blank(), plot.title = element_text(hjust=0.5)) +
+  labs(y = "Pass attempts",
+       x = "Rush attempts") +
+  ggtitle("Relationship between the number of attempted passes and rushes") +
+pass_rush
+```
+Based on the plot we can say that there might be a weak relationship.
 
+```{r}
+cor.test(qb$rush_att, qb$pass_att, method = "spearman")
+```
+The relationship is weak, almost non-existent.
+
+
+Secondly, I will check if those who take more risks and pass more interceptions, pass more yards.
+```{r}
+int_yds <- ggplot(qb_trimmed, aes(x = int, y = pass_yds)) +
+  geom_jitter() +
+  theme_light() +
+  theme(panel.border = element_blank(), plot.title = element_text(hjust=0.5)) +
+  labs(y = "Passed yards",
+       x = "Number of interceptions") +
+  ggtitle("Relationship between the number of passed yards and the number of interceptions")
+int_yds
+```
+
+
+```{r}
+cor.test(qb$pass_yds, qb$int, method = "pearson")
+```
+No relationship here either.
 
 
 
