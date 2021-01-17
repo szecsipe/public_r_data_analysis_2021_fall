@@ -10,6 +10,7 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
+library(ggfortify)
 ```
 
 ## Introduction
@@ -24,7 +25,7 @@ view(raw)
 #It was read in properly
 ```
 
-## Data exploration
+## Data exploration and data cleaning
 
 First I will check whether the data is what I think it is (variables look as they should look).
 ```{r}
@@ -145,12 +146,12 @@ hist(qb_trimmed$rate, 1000)
 ```
 The distribution has a weird tale approaching 0, but otherwise looks great
 
-##Hypotheses
+# ##Research question
 In this analysis I intend to explore what performance metrics can efficiently predics the ratings of the Quarterbacks (QBs). This question is not unique probably, because QBs are in the focus of the game and many fans think that the QB is the player who is mainly responsible for the success of the team. Sadly I can not test that hypothesis since I have no data available about the outcome of the games. I choose my research question to help the QBs of tomorrow. If they know what metrics (skills) they have to pay attention to have a higher rating they will have a greater chance to be drafted or be the crowd favorite.
 
-First, I will build a model (m1) that contains only the key QB metrics (pass_yds, pass_tds, int). Second, I will build a model (m2) that contains the metrics that is caintained by m1 and I add the metrics hybrid players are known for (rush_yds, rush_avg, rush_tds, rush_fumbles). Finally, I will test the better model in a  multilevel model to check whether franchises are an influential factor.
+First, I will build a model (m1) that contains only the key QB metrics (pass_yds, pass_tds, int). Second, I will build a model (m2) that contains the metrics that is contained by m1 and I add the metrics hybrid players are known for (rush_yds, rush_tds, rush_fumbles). Finally, I will test the better model in a  multilevel model to check whether franchises are an influential factor.
 
-##Ploting
+# ##Ploting
 Before I start to test my hypotheses I produce two plots to know more about the QBs of these years.
 
 First, I will check who were the most successful QBs in each team (I will only count those players who played at least 16 matches, which is the length of the regular season)
@@ -176,12 +177,10 @@ MVP <- ggplot(MVP_dat, aes(x = Rating, y = team)) +
                     paste("(With a QB in the database who played at least 16 matches)"))))
 MVP
 ```
-The plot shows us that it does not mean the same to be the best in every team. You can even see that Peyton Manning managed to be the highest rated players of two teams (Denver and Indianapolis). Standard deviations of ratings were not added to the plot (a plot it below), they show that it is possible that these players do not differ based on their ratings.
-
-
+The plot shows us that it does not mean the same to be the best in every team. You can even see that Peyton Manning managed to be the highest rated players of two teams (Denver and Indianapolis). Standard deviations of ratings were not added to the plot (I plot it below), they show that it is possible that these players do not differ statistically in their ratings.
 ```{r}
 MVP_bars <- ggplot(MVP_dat, aes(x = Rating, y = team)) +
-  geom_text(aes(label = name), nudge_y = -0.5) +
+  geom_text(aes(label = name), nudge_y = -0.4) +
   geom_point()+
   theme_light() +
   geom_errorbarh(aes(xmax = Rating + SD, xmin = Rating - SD)) +
@@ -245,7 +244,7 @@ pass_rush <- ggplot(qb_trimmed, aes(x = rush_att, y = pass_att)) +
   theme(panel.border = element_blank(), plot.title = element_text(hjust=0.5)) +
   labs(y = "Pass attempts",
        x = "Rush attempts") +
-  ggtitle("Relationship between the number of attempted passes and rushes") +
+  ggtitle("Relationship between the number of attempted passes and rushes")
 pass_rush
 ```
 Based on the plot we can say that there might be a weak relationship.
@@ -274,15 +273,62 @@ cor.test(qb$pass_yds, qb$int, method = "pearson")
 ```
 No relationship here either.
 
+# ##Model fitting
 
+As mentioned above in this section I will try to predict the rating of each players rating using the performance metrics. First, I will fit the more complex model.
 
+```{r}
+m2 <- lm(rate ~ pass_yds + pass_tds + int + rush_yds + rush_tds + rush_fumbles, data = qb_trimmed)
+summary(m2)
+```
+The results of the model make sense, but I will talk about the results once I checked the assumptions.
 
+#Overall picture
+```{r}
+autoplot(m2)
+```
+There are problems, Residuals vs Fitted and Q-Q plots and Scale-Location are not great
 
+#Checking for influential outliers
 
+```{r}
+# ## Cook's distance check
+cooksd <- cooks.distance(m2)
+3*mean(cooksd)
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")  # plot cook's distance, it is more or less ok
+abline(h = 0.0010, col="red") #0.0010 as cutoff point based on the plot
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>0.0010, names(cooksd),""), col="red")
+influential <- as.numeric(names(cooksd)[(cooksd > (0.0010))])
 
+qb_filtered <- qb_trimmed[-influential, ]
 
+#check whether it changes anything
+m2_2 <- lm(rate ~ pass_yds + pass_tds + int + rush_yds + rush_tds + rush_fumbles, data = qb_filtered)
+autoplot(m2_2)
+#Each plot improved, I will continue to use this data
+```
 
+#Check the normality assumption.
 
+```{r}
+plot(m2_2, 2)
+```
+The Q-Q plot looks ok, It follows the line
 
+#Linearity assumption
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+plot(m2_2, 1)
+```
+There is a little difference between the red line and the middle line but it is not a great difference
+
+#Homoscedasticty
+
+```{r}
+plot(m2_2, 3)
+lmtest::bptest(m2_2)
+#the plot is showing a weak curve but based on the statistical test I choose not to worry about it
+```
+
+I am done with the first model, I will fit my less comlex model on the filtered data
+
